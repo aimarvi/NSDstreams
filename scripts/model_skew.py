@@ -20,12 +20,31 @@ def hoyer_sparsity(row):
     s = (np.sqrt(n) - sabs/sssq) / (np.sqrt(n) - 1)
     return s
 
+model_files = {#'vit_resnet': 'feat_vit_base_resnet50_384_final.npy',
+              'untrained': 'feat_alexnet_in1k_pool_random.npy', 
+              #'moco': 'feat_resnet50_in1k_avgpool_moco.npy', 
+              'alexnet': 'feat_alexnet_in1k_pool.npy', 
+              #'resnet50': 'feat_resnet50_in1k_avgpool.npy', 
+              #'vit': 'feat_vit_base_patch16_224_final.npy'
+                }
+ids_all = []
+for sb in [1,2,5,7]: 
+    ids_all.extend(np.load('./COCO/coco_ID_of_repeats_subj%02d.npy'%sb))
+unique_ids = np.unique(ids_all)
+
+df = pd.DataFrame(columns = ['method', 'sparsity_W', 'kurtosis_W', 'skew_W', 'sparsity_H', 'kurtosis_H', 'skew_H', 'subj', 'iter', 'stream'])
+
 for subj in [1,2,5,7]:
-    for stream in ['lateral', 'ventral', 'dorsal']:
-        data_dir = f'./NSD_processed/{stream}_visual_data/'
+    coco = np.load('./COCO/coco_ID_of_repeats_subj%02d.npy'%sb)
+    match = []
+    for i, id in enumerate(coco):
+        match.append(np.where(unique_ids == id)[0][0])
+    match = np.asarray(match)
+    for stream, file in model_files.items():
+        feat_dir = './features/'
         n_components = 20
 
-        data = np.load('%s/subj%d.npy' % (data_dir,subj))
+        data = np.load(os.path.join(feat_dir, file))[match]
         V = (data - data.min(0)).T
         total_variance = np.var(V)
         
